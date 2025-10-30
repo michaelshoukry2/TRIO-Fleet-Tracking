@@ -30,7 +30,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             overflow: hidden;
             width: 100%;
-            max-width: 400px;
+            max-width: 500px;
         }
 
         .header {
@@ -99,6 +99,22 @@
             background: #5a6268;
         }
 
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
         .language-selector {
             display: flex;
             justify-content: center;
@@ -151,22 +167,72 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        .attendance-list {
+        .attendance-list, .user-list {
             max-height: 300px;
             overflow-y: auto;
+            margin-top: 10px;
         }
 
-        .attendance-item {
+        .attendance-item, .user-item {
             background: #f8f9fa;
             padding: 10px;
             margin-bottom: 10px;
             border-radius: 5px;
             border-left: 3px solid #28a745;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-item {
+            border-left-color: #1e3c72;
         }
 
         .status-on-duty { border-left-color: #28a745; }
         .status-delayed { border-left-color: #ffc107; }
         .status-absent { border-left-color: #dc3545; }
+
+        .tab-container {
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab.active {
+            border-bottom-color: #1e3c72;
+            color: #1e3c72;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -174,7 +240,7 @@
     <div class="container" id="loginScreen">
         <div class="header">
             <h1>TRIO Fleet Attendance</h1>
-            <p>Fleet Management System</p>
+            <p>Custom User Management</p>
         </div>
         
         <div class="form-container">
@@ -196,13 +262,13 @@
             <button class="btn" onclick="login()">Login</button>
             
             <p style="text-align: center; margin-top: 15px; color: #666;">
-                Demo: admin@triofleet.com / password123
+                Default Admin: admin@triofleet.com / admin123
             </p>
         </div>
     </div>
 
-    <!-- Dashboard Screen -->
-    <div class="container hidden" id="dashboardScreen">
+    <!-- User Dashboard -->
+    <div class="container hidden" id="userDashboard">
         <div class="header">
             <h1>Fleet Dashboard</h1>
             <p id="userWelcome">Welcome back!</p>
@@ -256,6 +322,89 @@
                 <h3>Today's Submissions</h3>
                 <div class="attendance-list" id="attendanceList">
                     <!-- Attendance items will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div class="container hidden" id="adminDashboard">
+        <div class="header">
+            <h1>Admin Dashboard</h1>
+            <p>User & Fleet Management</p>
+        </div>
+        
+        <div class="dashboard">
+            <div class="user-info">
+                <strong id="adminInfo">Admin: Loading...</strong>
+                <button class="btn btn-secondary" onclick="logout()" style="margin-top: 10px; width: auto;">Logout</button>
+            </div>
+
+            <div class="tab-container">
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('users')">Manage Users</div>
+                    <div class="tab" onclick="switchTab('vehicles')">Manage Vehicles</div>
+                    <div class="tab" onclick="switchTab('reports')">Reports</div>
+                </div>
+
+                <!-- Users Tab -->
+                <div class="tab-content active" id="usersTab">
+                    <h3>User Management</h3>
+                    <div class="input-group">
+                        <label>Add New User</label>
+                        <input type="email" id="newUserEmail" placeholder="User email">
+                        <input type="text" id="newUserName" placeholder="Full name" style="margin-top: 10px;">
+                        <select id="newUserRole" style="margin-top: 10px;">
+                            <option value="user">Driver</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <select id="newUserOffice" style="margin-top: 10px;">
+                            <option value="Giza Office">Giza Office</option>
+                            <option value="Maadi Office">Maadi Office</option>
+                            <option value="Mokattam Office">Mokattam Office</option>
+                        </select>
+                        <input type="password" id="newUserPassword" placeholder="Password" style="margin-top: 10px;">
+                        <button class="btn btn-success" onclick="createUser()" style="margin-top: 10px;">Create User</button>
+                    </div>
+
+                    <h4>Existing Users</h4>
+                    <div class="user-list" id="userList">
+                        <!-- Users will be listed here -->
+                    </div>
+                </div>
+
+                <!-- Vehicles Tab -->
+                <div class="tab-content" id="vehiclesTab">
+                    <h3>Vehicle Management</h3>
+                    <div class="input-group">
+                        <label>Add New Vehicle</label>
+                        <input type="text" id="newVehicleNumber" placeholder="Vehicle Number">
+                        <input type="text" id="newVehicleDriver" placeholder="Driver Name" style="margin-top: 10px;">
+                        <select id="newVehicleOffice" style="margin-top: 10px;">
+                            <option value="Giza Office">Giza Office</option>
+                            <option value="Maadi Office">Maadi Office</option>
+                            <option value="Mokattam Office">Mokattam Office</option>
+                        </select>
+                        <button class="btn btn-success" onclick="createVehicle()" style="margin-top: 10px;">Add Vehicle</button>
+                    </div>
+
+                    <h4>Existing Vehicles</h4>
+                    <div class="user-list" id="vehicleList">
+                        <!-- Vehicles will be listed here -->
+                    </div>
+                </div>
+
+                <!-- Reports Tab -->
+                <div class="tab-content" id="reportsTab">
+                    <h3>Attendance Reports</h3>
+                    <div class="input-group">
+                        <label>Select Month</label>
+                        <input type="month" id="reportMonth" value="2024-01">
+                        <button class="btn" onclick="generateReport()">Generate Report</button>
+                    </div>
+                    <div id="reportResults">
+                        <!-- Report results will be shown here -->
+                    </div>
                 </div>
             </div>
         </div>
