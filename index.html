@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRIO Fleet Attendance</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .header {
+            background: #1e3c72;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .form-container {
+            padding: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #1e3c72;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #2a5298;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .language-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .lang-btn {
+            padding: 8px 16px;
+            border: 2px solid #1e3c72;
+            background: white;
+            color: #1e3c72;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .lang-btn.active {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .dashboard {
+            padding: 20px;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #1e3c72;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .attendance-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .attendance-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 3px solid #28a745;
+        }
+
+        .status-on-duty { border-left-color: #28a745; }
+        .status-delayed { border-left-color: #ffc107; }
+        .status-absent { border-left-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="container" id="loginScreen">
+        <div class="header">
+            <h1>TRIO Fleet Attendance</h1>
+            <p>Fleet Management System</p>
+        </div>
+        
+        <div class="form-container">
+            <div class="language-selector">
+                <button class="lang-btn active" onclick="setLanguage('en')">EN</button>
+                <button class="lang-btn" onclick="setLanguage('ar')">AR</button>
+            </div>
+
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="Enter your email">
+            </div>
+
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password">
+            </div>
+
+            <button class="btn" onclick="login()">Login</button>
+            
+            <p style="text-align: center; margin-top: 15px; color: #666;">
+                Demo: admin@triofleet.com / password123
+            </p>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div class="container hidden" id="dashboardScreen">
+        <div class="header">
+            <h1>Fleet Dashboard</h1>
+            <p id="userWelcome">Welcome back!</p>
+        </div>
+        
+        <div class="dashboard">
+            <div class="user-info">
+                <strong id="userInfo">User: Loading...</strong>
+                <br>
+                <span id="officeInfo">Office: Loading...</span>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div style="font-size: 24px; font-weight: bold; color: #1e3c72;" id="vehicleCount">0</div>
+                    <div style="color: #666;">Vehicles</div>
+                </div>
+                <div class="stat-card">
+                    <div style="font-size: 24px; font-weight: bold; color: #28a745;" id="todayCount">0</div>
+                    <div style="color: #666;">Today's Submissions</div>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Select Vehicle</label>
+                <select id="vehicleSelect">
+                    <option value="">Choose a vehicle</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Status</label>
+                <select id="statusSelect" onchange="toggleDelayHours()">
+                    <option value="On Duty">On Duty</option>
+                    <option value="Delayed">Delayed</option>
+                    <option value="Absent">Absent</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Vacation">Vacation</option>
+                </select>
+            </div>
+
+            <div class="input-group hidden" id="delayHoursGroup">
+                <label>Delayed Hours</label>
+                <input type="number" id="delayHours" min="0" max="24" value="0">
+            </div>
+
+            <button class="btn" onclick="submitAttendance()">Submit Attendance</button>
+            <button class="btn btn-secondary" onclick="logout()" style="margin-top: 10px;">Logout</button>
+
+            <div style="margin-top: 20px;">
+                <h3>Today's Submissions</h3>
+                <div class="attendance-list" id="attendanceList">
+                    <!-- Attendance items will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
